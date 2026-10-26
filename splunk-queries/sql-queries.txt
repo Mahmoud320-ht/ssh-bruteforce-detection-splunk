@@ -1,3 +1,25 @@
+#failed login
+index=ssh_logs "Failed password"
+| rex field=_raw "Failed password for (invalid user )?(?<user>\S+) from (?<src_ip>\S+) port (?<src_port>\d+)"
+| table _time, src_ip, user, src_port
+
+# IP does this login
+index=ssh_logs "Failed password"
+| rex field=_raw "from (?<src_ip>\S+)"
+| stats count by src_ip
+| sort -count
+
+#usernames
+index=ssh_logs "Failed password"
+| rex field=_raw "for (invalid user )?(?<user>\S+) from"
+| stats count by user
+| sort -count
+
+#The timeline
+index=ssh_logs "Failed password"
+| timechart span=1m count
+
+#Build Alert
 index=ssh_logs "Failed password"
 | rex field=_raw "from (?<src_ip>\S+)"
 | bucket _time span=5m
