@@ -1,0 +1,5 @@
+index=ssh_logs "Failed password"
+| rex field=_raw "from (?<src_ip>\S+)"
+| bucket _time span=5m
+| stats count by src_ip, _time
+| where count > 10
