@@ -1,0 +1,15 @@
+#all connections
+index=network_logs
+| rex field=_raw "ESTAB\s+\S+\s+\S+\s+\S+:(?<src_port>\d+)\s+(?<dst_ip>[\d\.]+):(?<dst_port>\d+)"
+| table _time, dst_ip, dst_port
+
+#discover a specific port 4444
+index=network_logs
+| rex field=_raw "ESTAB\s+\S+\s+\S+\s+\S+:(?<src_port>\d+)\s+(?<dst_ip>[\d\.]+):(?<dst_port>\d+)"
+| where dst_port > 1024 AND dst_port != 443 AND dst_port != 80
+| stats count by dst_ip, dst_port
+
+#Alert for any connection out
+index=network_logs
+| rex field=_raw "ESTAB\s+\S+\s+\S+\s+\S+:(?<src_port>\d+)\s+(?<dst_ip>[\d\.]+):(?<dst_port>\d+)"
+| search dst_port IN (4444, 1337, 1234, 9001, 8080)
