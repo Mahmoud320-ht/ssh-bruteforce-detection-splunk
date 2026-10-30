@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# log_connections.sh
+#
+# Periodically logs established TCP connections on the victim host.
+# Reverse shells don't produce a conventional application log, so
+# this script creates a simple log source for Splunk to ingest and
+# analyze.
+#
+# Run in the background on the victim:
+#   sudo nohup /usr/local/bin/log_connections.sh &
+#
+# Output: /var/log/network_connections.log
+
+while true; do
+    echo "=== $(date) ==="
+    ss -tnp state established
+    sleep 5
+done >> /var/log/network_connections.log
