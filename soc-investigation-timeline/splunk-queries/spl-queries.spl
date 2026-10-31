@@ -1,0 +1,43 @@
+## End-to-End SOC Investigation — Correlated SPL Queries
+## Indexes used: ssh_logs, network_logs
+
+# ---------------------------------------------------------
+# 1. Unified incident event log — all three phases, merged
+#    and sorted chronologically
+# ---------------------------------------------------------
+(index=ssh_logs ("Failed password" OR "Accepted password")) OR (index=network_logs "4444")
+| eval event_type=case(
+    match(_raw, "Failed password"), "1 - Brute-Force Attempt",
+    match(_raw, "Accepted password"), "2 - Successful SSH Login",
+    match(_raw, "4444"), "3 - Reverse Shell Connection"
+  )
+| where isnotnull(event_type)
+| table _time, event_type, _raw
+| sort _time
+
+
+# ---------------------------------------------------------
+# 2. Attack progression timeline (for a line chart panel)
+# ---------------------------------------------------------
+(index=ssh_logs ("Failed password" OR "Accepted password")) OR (index=network_logs "4444")
+| eval event_type=case(
+    match(_raw, "Failed password"), "1 - Brute-Force Attempt",
+    match(_raw, "Accepted password"), "2 - Successful SSH Login",
+    match(_raw, "4444"), "3 - Reverse Shell Connection"
+  )
+| where isnotnull(event_type)
+| timechart span=1m count by event_type
+
+
+# ---------------------------------------------------------
+# 3. Attack phase summary — first/last seen + count per phase
+# ---------------------------------------------------------
+(index=ssh_logs ("Failed password" OR "Accepted password")) OR (index=network_logs "4444")
+| eval event_type=case(
+    match(_raw, "Failed password"), "1 - Brute-Force Attempt",
+    match(_raw, "Accepted password"), "2 - Successful SSH Login",
+    match(_raw, "4444"), "3 - Reverse Shell Connection"
+  )
+| where isnotnull(event_type)
+| stats earliest(_time) as first_seen, latest(_time) as last_seen, count by event_type
+| convert ctime(first_seen) ctime(last_seen)
